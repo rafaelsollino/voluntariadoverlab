@@ -19,9 +19,9 @@ from audiocraft.base_models import MusicGen
 from audiocraft.models.loaders import load_compression_model, load_lm_model
 
 
-# =========================
+
 # Utils DDP
-# =========================
+
 def dist_is_on():
     return dist.is_available() and dist.is_initialized()
 
@@ -42,16 +42,11 @@ def allreduce_mean_scalar(x: float, device: torch.device) -> float:
     return float(t.item())
 
 
-# =========================
 # Patch para ViViT 768 -> 1024
 # (fixa o bug 3137x1536 vs 1024x1024)
-# =========================
+
 def patch_video_projection_to_1024(lm_model: nn.Module, device: torch.device) -> int:
-    """
-    No seu ambiente, as camadas estavam com Linear(768->1536),
-    mas o attention interno espera 1024. Aqui substituímos para 768->1024.
-    Retorna quantas camadas foram patchadas.
-    """
+
     if not hasattr(lm_model, "transformer"):
         raise RuntimeError("LM não tem atributo .transformer; não consigo aplicar patch.")
 
@@ -79,10 +74,6 @@ def patch_video_projection_to_1024(lm_model: nn.Module, device: torch.device) ->
         print(f"[PATCH] total patched = {patched}")
     return patched
 
-
-# =========================
-# Trainer
-# =========================
 class Trainer:
     def __init__(
         self,
@@ -132,7 +123,6 @@ class Trainer:
         if dist_is_on():
             dist.destroy_process_group()
 
-    # Audio -> codes
     def wav_to_codes(self, wav: torch.Tensor, model: VideoMusicGen, device: torch.device) -> torch.Tensor:
         """
         item['audio'] no seu dataset veio como [1, 960000].
@@ -147,7 +137,6 @@ class Trainer:
         with torch.no_grad():
             codes, scale = model.compression_model.encode(wav)
 
-        # scale normalmente None
         return codes
 
     def build_model(self, device: torch.device) -> VideoMusicGen:
@@ -161,19 +150,16 @@ class Trainer:
             lm=lm,
             max_duration=30,
         )
-
-        # VideoMusicGen não tem .to(); mova o LM explicitamente
+        
         model.lm.to(device)
         model.lm.float()
-        model.lm.eval()  # setamos train/eval no loop
+        model.lm.eval()  
 
-        # patch crucial para casar ViViT(768) com cross-attn(1024)
         patch_video_projection_to_1024(model.lm, device)
 
-        # freeze tudo e libera só parâmetros ligados a vídeo + projection layers patchadas
         model.lm.requires_grad_(False)
         for n, p in model.lm.named_parameters():
-            if "video" in n:  # inclui video_projection_layer e outras partes
+            if "video" in n: 
                 p.requires_grad = True
 
         return model
@@ -202,12 +188,7 @@ class Trainer:
         return train_loader, valid_loader, train_sampler, valid_sampler
 
     def compute_loss_from_output(self, logits, mask, codes) -> torch.Tensor:
-        """
-        Pelo seu debug:
-          logits: [B, Q, T, 2048]
-          mask:   [B, Q, T]
-          codes:  [B, Q, T] (índices)
-        """
+
         if logits.dim() != 4:
             raise RuntimeError(f"logits shape inesperado: {tuple(logits.shape)} (esperado [B,Q,T,C])")
         if logits.size(-1) != 2048:
@@ -217,17 +198,15 @@ class Trainer:
             raise RuntimeError(f"mask shape inesperado: {tuple(mask.shape)} (esperado [B,Q,T])")
         mask = mask.bool()
 
-        # codes pode vir [B,Q,T] int64. Se vier com outra forma, explode aqui (melhor do que treinar errado).
         if codes.dim() != 3:
             raise RuntimeError(f"codes shape inesperado: {tuple(codes.shape)} (esperado [B,Q,T])")
         codes = codes.long()
 
-        # Seleciona tokens válidos
-        masked_logits = logits[mask]   # [N, 2048]
-        masked_targets = codes[mask]   # [N]
+        masked_logits = logits[mask]  
+        masked_targets = codes[mask]   
 
         if masked_logits.numel() == 0:
-            # Sem tokens válidos (raro). Retorna loss 0 (sem grad útil).
+
             return masked_logits.sum() * 0.0
 
         return self.criterion(masked_logits, masked_targets)
@@ -248,24 +227,19 @@ class Trainer:
             audios = item["audio"]
             videos = item["video"]
 
-            # Seu dataset geralmente devolve B=1, mas suportamos batch > 1.
-            # videos precisa estar em float e no device
             if torch.is_tensor(videos):
                 videos = videos.to(device, non_blocking=True).float()
             else:
                 raise RuntimeError(f"item['video'] não é tensor: {type(videos)}")
 
-            # preprocessa cada áudio -> codes
             codes_list = []
             for i in range(len(prompts)):
                 wav_i = audios[i]
                 codes_i = self.wav_to_codes(wav_i, model, device)  # [1, Q, T]
                 codes_list.append(codes_i)
 
-            # concat no batch
             codes = torch.cat(codes_list, dim=0)  # [B, Q, T]
 
-            # condição textual
             attrs, _ = model._prepare_tokens_and_attributes(prompts, None)
             tokenized = ddp_lm.module.condition_provider.tokenize(attrs)
             condition_tensors = ddp_lm.module.condition_provider(tokenized)
@@ -277,10 +251,9 @@ class Trainer:
                     conditions=[],
                     condition_tensors=condition_tensors,
                 )
-                # out.logits: [B,Q,T,2048], out.mask: [B,Q,T]
                 loss = self.compute_loss_from_output(out.logits, out.mask, codes)
 
-            # grad accumulation
+
             loss_scaled = loss / self.grad_acc
             scaler.scale(loss_scaled).backward()
 
@@ -305,7 +278,6 @@ class Trainer:
                 step_loss_acc = 0.0
                 micro_count = 0
 
-        # se epoch termina no meio do accumulation, faz um step final
         if micro_count > 0:
             scaler.unscale_(optimizer)
             torch.nn.utils.clip_grad_norm_(ddp_lm.parameters(), 1.0)
