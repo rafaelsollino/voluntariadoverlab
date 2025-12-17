@@ -151,15 +151,15 @@ class SoundtrackDataset(Dataset):
         prompt = self.generate_prompt(item)
         file_name = f"{item['file_name']}"
 
-        #audio_path = os.path.join(self.path, file_name + ".wav")
+        audio_path = os.path.join(self.path, file_name + ".wav")
         feat_path = os.path.join(self.path, file_name + ".pt")
     
-        #audio = self.load_audio(audio_path)
+        audio = self.load_audio(audio_path)
         video_features = self.get_video_features(feat_path)
 
         sample = {
             'prompt': prompt,
-            #'audio': audio,
+            'audio': audio,
             'video': video_features
         }
         
@@ -243,15 +243,15 @@ class OESCom(Dataset):
         
         prompt = self.generate_prompt(item)
         
-       # audio_path = f"./OESPUB/{idx}_music.wav"
+        audio_path = f"./OESPUB/{idx}_music.wav"
         video_path = f"./OESPUB/{idx}.pt"
 
-       # audio = self.load_audio(audio_path)
+        audio = self.load_audio(audio_path)
         video_features = torch.load(video_path)
 
         sample = {
             'prompt': prompt,
-        #    'audio': audio,
+            'audio': audio,
             'video': video_features
         }
         
