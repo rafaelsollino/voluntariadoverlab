@@ -43,7 +43,7 @@ def allreduce_mean_scalar(x: float, device: torch.device) -> float:
 
 
 # Patch para ViViT 768 -> 1024
-# (fixa o bug 3137x1536 vs 1024x1024)
+# (resolve o bug 3137x1536 vs 1024x1024)
 
 def patch_video_projection_to_1024(lm_model: nn.Module, device: torch.device) -> int:
 
