@@ -20,6 +20,11 @@ def get_bip_bip(bip_duration=0.125, frequency=440, duration=0.5, sample_rate=320
 
 
 def main():
+    import os 
+    print("PWD:", os.getcwd())
+    print("CHECK:", "/ossl/OpenScreenSoundLibrary-v1/AA_0.wav")
+    print("EXISTS:", os.path.exists("/ossl/OpenScreenSoundLibrary-v1/AA_0.wav"))
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_name", type=str, required=True,
                         choices=["s-base", "m-base", "s-text", "m-text", "s-multi", "m-multi"],
