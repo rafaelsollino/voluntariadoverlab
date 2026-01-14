@@ -61,13 +61,13 @@ def main():
         model.lm.load_state_dict(torch.load(CHECKPOINT_PATH), strict=False)
         model.compression_model.load_state_dict(base_model.compression_model.state_dict(), strict=False)
 
-    dataset = OESCom(csv_path="ossl/OpenScreenSoundLibrary-v1/updated_meta.csv", 
-                     root="ossl/OpenScreenSoundLibrary-v1")
+    dataset = OESCom(csv_path="/ossl/OpenScreenSoundLibrary-v1/updated_meta.csv", 
+                     root="/ossl/OpenScreenSoundLibrary-v1")
 
     dataloader = DataLoader(dataset, batch_size=1, num_workers=0, pin_memory=True)
 
     for batch_idx, item in tqdm(enumerate(dataloader)):
-        print(batch_idx, item['file_name'], item['prompt'])
+        print(batch_idx, item['prompt'])
         bip = get_bip_bip(0.125).expand(1, -1, -1)
         if model_name in ['s-base', 'm-base', 's-text', 'm-text']:
             res = model.generate_continuation(bip, 32000, item['prompt'], progress=True)

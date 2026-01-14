@@ -247,15 +247,15 @@ class OESCom(Dataset):
 
         base_name = f"{film_id}_{clip_id}"
 
-        print("DEBUG audio_path:", audio_path)
-        print("DEBUG exists:", os.path.exists(audio_path))
-        print("DEBUG root exists:", os.path.exists(self.root))
-
         prompt = self.generate_prompt(item)
         
         audio_path = os.path.join(self.root, f"{base_name}.wav")
         video_path = os.path.join(self.root, f"{base_name}.pt")
-
+        
+        print("DEBUG audio_path:", audio_path)
+        print("DEBUG exists:", os.path.exists(audio_path))
+        print("DEBUG root exists:", os.path.exists(self.root))
+        
         #audio_path = f"./OpenScreenSoundLibrary-v1/{idx}.wav"
         #video_path = f"./OpenScreenSoundLibrary-v1/{idx}.pt"
 
