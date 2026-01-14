@@ -168,8 +168,9 @@ class SoundtrackDataset(Dataset):
 
 class OESCom(Dataset):
 
-    def __init__(self):
-        self.data = pd.read_csv("./OESPUB/updated_meta.csv")
+    def __init__(self, csv_path, root):
+        self.root = root
+        self.data = pd.read_csv("./OpenScreenSoundLibrary-v1/updated_meta.csv")
         
     def __len__(self) -> int:
         return len(self.data)
@@ -240,11 +241,19 @@ class OESCom(Dataset):
             idx = idx.tolist()
             
         item = self.data.iloc[idx]
+
+        film_id = item["film_id"]
+        clip_id = item["clip_id"]
+
+        base_name = f"{film_id}_{clip_id}"
         
         prompt = self.generate_prompt(item)
         
-        audio_path = f"./OESPUB/{idx}_music.wav"
-        video_path = f"./OESPUB/{idx}.pt"
+        audio_path = os.path.join(self.root, f"{base_name}.wav")
+        video_path = os.path.join(self.root, f"{base_name}.pt")
+
+        #audio_path = f"./OpenScreenSoundLibrary-v1/{idx}.wav"
+        #video_path = f"./OpenScreenSoundLibrary-v1/{idx}.pt"
 
         audio = self.load_audio(audio_path)
         video_features = torch.load(video_path)

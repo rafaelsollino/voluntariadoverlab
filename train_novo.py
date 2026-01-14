@@ -90,7 +90,8 @@ class Trainer:
         max_patience: int = 3,
     ):
         self.dataset_path = dataset_path
-        self.output_dir = Path(output_dir)
+        self.output_dir = Path("/datasets/output")
+        self.output_dir.mkdir(parents=True, exist_ok=True)
         self.batch_size = batch_size
         self.lr = learning_rate
         self.epochs = num_epochs

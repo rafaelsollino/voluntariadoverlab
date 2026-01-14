@@ -56,7 +56,9 @@ def main():
         model.lm.load_state_dict(torch.load(CHECKPOINT_PATH), strict=False)
         model.compression_model.load_state_dict(base_model.compression_model.state_dict(), strict=False)
 
-    dataset = OESCom()
+    dataset = OESCom(csv_path="ossl/OpenScreenSoundLibrary-v1/updated_meta.csv", 
+                     root="ossl/OpenScreenSoundLibrary-v1")
+
     dataloader = DataLoader(dataset, batch_size=1, num_workers=0, pin_memory=True)
 
     for batch_idx, item in tqdm(enumerate(dataloader)):
