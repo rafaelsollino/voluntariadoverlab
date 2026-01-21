@@ -34,6 +34,13 @@ def allreduce_mean_scalar(x: float, device: torch.device) -> float:
         t /= world()
     return float(t.item())
 
+<<<<<<< HEAD
+=======
+
+# Patch para ViViT 768 -> 1024
+# (resolve o bug 3137x1536 vs 1024x1024)
+
+>>>>>>> 4d64b92d42718d846bb4a2b8efcf4388c822cc7a
 def patch_video_projection_to_1024(lm_model: nn.Module, device: torch.device) -> int:
 
     if not hasattr(lm_model, "transformer"):

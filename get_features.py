@@ -6,19 +6,13 @@ import pandas as pd
 from tqdm import tqdm
 from transformers import VivitImageProcessor, VivitModel
 
-##############################################
-# CONFIGURAÇÕES
-##############################################
 CSV_DIR = "/ossl-v1/OpenScreenSoundLibrary-v1/"
 VIDEO_DIR = "/ossl-v1/OpenScreenSoundLibrary-v1/"
 
 MODEL_NAME = "google/vivit-b-16x2-kinetics400"
-CLIP_LEN = 32           # número de frames
-MAX_SECONDS = 150       # usa no máximo 150s do vídeo (como no seu código)
+CLIP_LEN = 32     
+MAX_SECONDS = 150     
 
-##############################################
-# UTIL: escolher metadata para garantir 736
-##############################################
 def carregar_metadata(csv_dir: str) -> pd.DataFrame:
     meta_all = os.path.join(csv_dir, "meta_all.csv")
     train_csv = os.path.join(csv_dir, "train_meta.csv")
@@ -51,9 +45,6 @@ def carregar_metadata(csv_dir: str) -> pd.DataFrame:
     print("Usando metadata (fallback): varredura de .mp4 na pasta")
     return df
 
-##############################################
-# CARREGAR MODELO VIVIT
-##############################################
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Carregando modelo ViViT:", MODEL_NAME)
 
@@ -61,9 +52,6 @@ processor = VivitImageProcessor.from_pretrained(MODEL_NAME)
 vivit = VivitModel.from_pretrained(MODEL_NAME).to(device)
 vivit.eval()
 
-##############################################
-# FUNÇÕES AUXILIARES
-##############################################
 def sample_frame_indices(clip_len: int, seg_len: int):
     seg_len = max(seg_len, clip_len)  # garante seg_len >= clip_len
     seg_size = float(seg_len) / float(clip_len)
@@ -78,7 +66,6 @@ def extrair_features(video_path: str) -> torch.Tensor:
         stream = container.streams.video[0]
         fps = float(stream.base_rate) if stream.base_rate else 30.0
 
-        # Alguns containers retornam stream.frames = 0 (desconhecido).
         total_frames = int(stream.frames) if stream.frames and stream.frames > 0 else int(MAX_SECONDS * fps)
 
         max_frames = min(int(MAX_SECONDS * fps), total_frames)
@@ -86,7 +73,7 @@ def extrair_features(video_path: str) -> torch.Tensor:
 
         frames = []
         for idx in indices:
-            # seek em microsegundos (time_base do av é em microseconds)
+  
             container.seek(int((idx / fps) * av.time_base))
             frame = next(container.decode(stream))
             frames.append(frame.to_rgb().to_ndarray())
@@ -97,22 +84,17 @@ def extrair_features(video_path: str) -> torch.Tensor:
         with torch.no_grad():
             outputs = vivit(**inputs)
 
-        # last_hidden_state: [1, tokens, hidden]
         feats = outputs.last_hidden_state.squeeze(0).cpu()
         return feats
 
     finally:
         container.close()
 
-##############################################
-# LOOP PRINCIPAL
-##############################################
 df = carregar_metadata(CSV_DIR)
 
 if "film_id" not in df.columns or "clip_id" not in df.columns:
     raise RuntimeError("Metadata precisa ter colunas film_id e clip_id.")
 
-# Remove duplicatas por segurança
 df = df.drop_duplicates(subset=["film_id", "clip_id"]).reset_index(drop=True)
 
 print(f"Processando {len(df)} entradas…\n")
