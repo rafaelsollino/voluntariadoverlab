@@ -1,26 +1,19 @@
 import os
 import math
 from pathlib import Path
-
 import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
 import torch.nn as nn
-
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from transformers import get_scheduler
 from tqdm import tqdm
-
 from audiocraft.dataset import SoundtrackDataset
 from audiocraft.models import VideoMusicGen
 from audiocraft.base_models import MusicGen
 from audiocraft.models.loaders import load_compression_model, load_lm_model
-
-
-
-# Utils DDP
 
 def dist_is_on():
     return dist.is_available() and dist.is_initialized()
@@ -40,10 +33,6 @@ def allreduce_mean_scalar(x: float, device: torch.device) -> float:
         dist.all_reduce(t, op=dist.ReduceOp.SUM)
         t /= world()
     return float(t.item())
-
-
-# Patch para ViViT 768 -> 1024
-# (fixa o bug 3137x1536 vs 1024x1024)
 
 def patch_video_projection_to_1024(lm_model: nn.Module, device: torch.device) -> int:
 
@@ -81,7 +70,7 @@ class Trainer:
         output_dir: str,
         batch_size: int = 1,
         learning_rate: float = 1e-4,
-        num_epochs: int = 50,
+        num_epochs: int = 100,
         grad_acc: int = 8,
         checkpoint_interval: int = 1,
         num_workers: int = 0,
@@ -141,12 +130,12 @@ class Trainer:
         return codes
 
     def build_model(self, device: torch.device) -> VideoMusicGen:
-        base = MusicGen.get_pretrained("facebook/musicgen-small")
-        lm = load_lm_model(base.lm.state_dict(), "facebook/musicgen-small", device="cuda")
-        compression = load_compression_model("facebook/musicgen-small", device="cuda")
+        base = MusicGen.get_pretrained("facebook/musicgen-medium")
+        lm = load_lm_model(base.lm.state_dict(), "facebook/musicgen-medium", device="cuda")
+        compression = load_compression_model("facebook/musicgen-medium", device="cuda")
 
         model = VideoMusicGen(
-            "small",
+            "medium",
             compression_model=compression,
             lm=lm,
             max_duration=30,
@@ -154,9 +143,8 @@ class Trainer:
         
         model.lm.to(device)
         model.lm.float()
-        model.lm.eval()  
-
-        patch_video_projection_to_1024(model.lm, device)
+       
+        #patch_video_projection_to_1024(model.lm, device)
 
         model.lm.requires_grad_(False)
         for n, p in model.lm.named_parameters():
@@ -405,14 +393,14 @@ class Trainer:
 
             # early stopping
             if val_loss < best:
-                best = val_loss
-                patience = 0
-                self.save_best(ddp_lm, best)
+               best = val_loss
+               patience = 0
+               self.save_best(ddp_lm, best)
             else:
-                patience += 1
-                if is_main():
-                    print(f"No improvement. patience={patience}/{self.max_patience}")
-
+               patience += 1
+               if is_main():
+                 print(f"No improvement. patience={patience}/{self.max_patience}")
+#
             stop = torch.tensor([1 if patience >= self.max_patience else 0], device=device, dtype=torch.int32)
             if dist_is_on():
                 dist.broadcast(stop, src=0)
@@ -437,10 +425,10 @@ class Trainer:
 if __name__ == "__main__":
     trainer = Trainer(
         dataset_path="./OpenScreenSoundLibrary-v1/",
-        output_dir="./runs",
+        output_dir="/datasets/output2",
         batch_size=1,
         learning_rate=1e-4,
-        num_epochs=50,
+        num_epochs=100,
         grad_acc=8,
         checkpoint_interval=1,
         num_workers=0,

@@ -23,9 +23,9 @@ class SoundtrackDataset(Dataset):
 
         # lê o CSV certo usando o path
         if train_or_valid == 'train':
-            meta_path = os.path.join(self.path, "updated_meta.csv")
+            meta_path = os.path.join(self.path, "tv_train_meta.csv")
         elif train_or_valid == 'valid':
-            meta_path = os.path.join(self.path, "updated_meta.csv")
+            meta_path = os.path.join(self.path, "tv_valid_meta.csv")
         else:
             print("train or valid? - error")
             exit()
@@ -149,10 +149,16 @@ class SoundtrackDataset(Dataset):
         item = self.data.iloc[idx]
         
         prompt = self.generate_prompt(item)
-        file_name = f"{item['file_name']}"
+        
+        film_id = item["film_id"]
+        clip_id = item["clip_id"]
 
-        audio_path = os.path.join(self.path, file_name + ".wav")
-        feat_path = os.path.join(self.path, file_name + ".pt")
+        base_name = f"{film_id}_{clip_id}"
+        
+        #file_name = f"{item['file_name']}"
+
+        audio_path = os.path.join(self.path, base_name + ".wav")
+        feat_path = os.path.join(self.path, base_name + ".pt")
     
         audio = self.load_audio(audio_path)
         video_features = self.get_video_features(feat_path)
@@ -170,7 +176,7 @@ class OESCom(Dataset):
 
     def __init__(self, csv_path, root):
         self.root = root
-        self.data = pd.read_csv("./OpenScreenSoundLibrary-v1/updated_meta.csv")
+        self.data = pd.read_csv("./OpenScreenSoundLibrary-v1/tv_train_meta.csv")
         
     def __len__(self) -> int:
         return len(self.data)

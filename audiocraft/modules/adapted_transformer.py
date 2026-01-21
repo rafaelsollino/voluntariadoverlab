@@ -909,7 +909,7 @@ class StreamingTransformerLayer(nn.TransformerEncoderLayer):
         self.norm1 = create_norm_fn(norm, d_model, **factory_kwargs)  # type: ignore
         self.norm2 = create_norm_fn(norm, d_model, **factory_kwargs)  # type: ignore
         #self.video_projection_layer= nn.Linear(768, 1536)
-        self.video_projection_layer= nn.Linear(768, 1024)
+        self.video_projection_layer= nn.Linear(768, 1536)
         
         #self.video_attention = VideoMusicAttention(
         #    music_dim=1536,

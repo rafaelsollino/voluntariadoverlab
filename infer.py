@@ -61,7 +61,7 @@ def main():
         model.lm.load_state_dict(torch.load(CHECKPOINT_PATH), strict=False)
         model.compression_model.load_state_dict(base_model.compression_model.state_dict(), strict=False)
 
-    dataset = OESCom(csv_path="/ossl/OpenScreenSoundLibrary-v1/updated_meta.csv", 
+    dataset = OESCom(csv_path="/ossl/OpenScreenSoundLibrary-v1/tv_train_meta.csv", 
                      root="/ossl/OpenScreenSoundLibrary-v1")
 
     dataloader = DataLoader(dataset, batch_size=1, num_workers=0, pin_memory=True)
@@ -75,6 +75,6 @@ def main():
             res = model.generate_continuation(bip, 32000, item['prompt'], item['video'].to("cuda"), progress=True)
         wavfile.write(f"{batch_idx}.wav", 32000, res.cpu().numpy())
 
-
 if __name__ == "__main__":
     main()
+

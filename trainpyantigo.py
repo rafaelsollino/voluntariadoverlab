@@ -277,18 +277,17 @@ class DistributedMusicGenTrainer:
             avg_val_loss = sum(val_losses) / len(val_losses)
             print(f"Epoch {epoch}: Average Validation Loss = {avg_val_loss:.4f}")
             
-
-            
             if avg_val_loss < best_val_loss:
                 best_val_loss = avg_val_loss
                 patience_counter = 0
-                torch.save({
-                    'epoch': epoch,
-                    'model_state_dict': model.lm.state_dict(),
-                    'optimizer_state_dict': optimizer.state_dict(),
-                    'val_loss': avg_val_loss,
-                }, f'multi{epoch}.pt')
-                print(f"Saved best model with validation loss: {avg_val_loss:.4f}")
+                if rank == 0:                     
+                    torch.save({
+                        'epoch': epoch,
+                        'model_state_dict': model.lm.state_dict(),
+                        'optimizer_state_dict': optimizer.state_dict(),
+                        'val_loss': avg_val_loss,
+                    }, self.output_dir / f'multi{epoch}.pt')
+                    print(f"Saved best model with validation loss: {avg_val_loss:.4f}")
             else:
                 patience_counter += 1
                 print(f"Validation loss did not improve. Patience: {patience_counter}/3")
@@ -336,9 +335,9 @@ def train_musicgen(
 if __name__ == "__main__":
     train_musicgen(
         dataset_path="./OpenScreenSoundLibrary-v1/",
-        output_dir="./",
+        output_dir="/datasets/output",
         batch_size=1, 
-        learning_rate=1e-6, 
+        learning_rate=1e-4, 
         num_epochs=100,
         gradient_accumulation_steps=2,
         checkpoint_interval=10,
