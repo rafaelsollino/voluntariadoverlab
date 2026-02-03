@@ -10,6 +10,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 
+
 def get_bip_bip(bip_duration=0.125, frequency=440, duration=0.5, sample_rate=32000, device="cuda"):
     """Generates a series of bip bip at the given frequency."""
     t = torch.arange(int(duration * sample_rate), device=device, dtype=torch.float) / sample_rate
@@ -21,9 +22,9 @@ def get_bip_bip(bip_duration=0.125, frequency=440, duration=0.5, sample_rate=320
 
 def main():
     import os 
-    print("PWD:", os.getcwd())
-    print("CHECK:", "/ossl/OpenScreenSoundLibrary-v1/AA_0.wav")
-    print("EXISTS:", os.path.exists("/ossl/OpenScreenSoundLibrary-v1/AA_0.wav"))
+    #print("PWD:", os.getcwd())
+    #print("CHECK:", "/ossl/OpenScreenSoundLibrary-v1/AA_0.wav")
+    #print("EXISTS:", os.path.exists("/ossl/OpenScreenSoundLibrary-v1/AA_0.wav"))
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_name", type=str, required=True,
@@ -61,19 +62,40 @@ def main():
         model.lm.load_state_dict(torch.load(CHECKPOINT_PATH), strict=False)
         model.compression_model.load_state_dict(base_model.compression_model.state_dict(), strict=False)
 
-    dataset = OESCom(csv_path="/ossl/OpenScreenSoundLibrary-v1/tv_train_meta.csv", 
-                     root="/ossl/OpenScreenSoundLibrary-v1")
 
-    dataloader = DataLoader(dataset, batch_size=1, num_workers=0, pin_memory=True)
+    #dataset = OESCom(csv_path="/ossl/, 
+    #                root="/ossl/")
 
-    for batch_idx, item in tqdm(enumerate(dataloader)):
+    #dataloader = DataLoader(dataset, batch_size=1, num_workers=0, pin_memory=True)
+
+    video_feats = torch.load("video3.pt").to("cuda")
+    if video_feats.dim() == 2:
+        video_feats = video_feats.unsqueeze(0)  # [1, T, D]
+
+
+    '''for batch_idx, item in tqdm(enumerate(dataloader)):
         print(batch_idx, item['prompt'])
         bip = get_bip_bip(0.125).expand(1, -1, -1)
         if model_name in ['s-base', 'm-base', 's-text', 'm-text']:
             res = model.generate_continuation(bip, 32000, item['prompt'], progress=True)
         else:
             res = model.generate_continuation(bip, 32000, item['prompt'], item['video'].to("cuda"), progress=True)
-        wavfile.write(f"{batch_idx}.wav", 32000, res.cpu().numpy())
+        wavfile.write(f"{batch_idx}.wav", 32000, res.cpu().numpy())'''
+
+    prompt = "An instrumental track featuring a fast-tempo drum kit rhythm and distorted bass guitar lines. The arrangement includes a loud metallic percussion strike and a cymbal crash, followed immediately by a sudden silence"
+
+    bip = get_bip_bip(0.125).expand(1, -1, -1)
+
+    res = model.generate_continuation(
+        bip,
+        32000,
+        [prompt],
+        video_feats,
+        progress=True
+        )
+
+    wavfile.write("acidente2.wav", 32000, res.cpu().numpy())
+
 
 if __name__ == "__main__":
     main()

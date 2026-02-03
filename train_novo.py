@@ -34,13 +34,6 @@ def allreduce_mean_scalar(x: float, device: torch.device) -> float:
         t /= world()
     return float(t.item())
 
-<<<<<<< HEAD
-=======
-
-# Patch para ViViT 768 -> 1024
-# (resolve o bug 3137x1536 vs 1024x1024)
-
->>>>>>> 4d64b92d42718d846bb4a2b8efcf4388c822cc7a
 def patch_video_projection_to_1024(lm_model: nn.Module, device: torch.device) -> int:
 
     if not hasattr(lm_model, "transformer"):
@@ -432,13 +425,13 @@ class Trainer:
 if __name__ == "__main__":
     trainer = Trainer(
         dataset_path="./OpenScreenSoundLibrary-v1/",
-        output_dir="/datasets/output2",
-        batch_size=1,
+        output_dir="/datasets/output",
+        batch_size=2,
         learning_rate=1e-4,
         num_epochs=100,
-        grad_acc=8,
+        grad_acc=16,
         checkpoint_interval=1,
-        num_workers=0,
+        num_workers=10,
         master_addr="localhost",
         master_port="12355",
         max_patience=3,

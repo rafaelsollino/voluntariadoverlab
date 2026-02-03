@@ -1,0 +1,3 @@
+batch 2
+num workers 10
+grad acc 16

@@ -145,6 +145,8 @@ class LayerScale(nn.Module):
 class VideoMusicAttention(nn.Module):
     def __init__(self, music_dim=1536, vivit_dim=768,num_heads=8):
         super().__init__()
+        if music_dim is None:
+            raise ValueError("Music dim must be provided")
         self.num_heads = num_heads
         self.head_dim = music_dim // num_heads
 
@@ -942,7 +944,15 @@ class StreamingTransformerLayer(nn.TransformerEncoderLayer):
             assert cross_attention_src is None
         else:
             assert cross_attention_src is not None
-        
+            
+        # if video_features is not None and video_features.shape[0] != src.shape[0]:
+        #     batch_audio = src.shape[0]
+        #     batch_video = video_features.shape[0]
+            
+        #     # Se for divisível (ex: 86 / 2 = 43), expande o vídeo
+        #     if batch_audio % batch_video == 0:
+        #         factor = batch_audio // batch_video
+        #         video_features = video_features.repeat_interleave(factor, dim=0)
         
         x = src
         if self.norm_first:

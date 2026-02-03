@@ -6,8 +6,8 @@ import pandas as pd
 from tqdm import tqdm
 from transformers import VivitImageProcessor, VivitModel
 
-CSV_DIR = "/ossl-v1/OpenScreenSoundLibrary-v1/"
-VIDEO_DIR = "/ossl-v1/OpenScreenSoundLibrary-v1/"
+CSV_DIR = "/ossl/OpenScreenSoundLibrary-v1/"
+VIDEO_DIR = "/ossl/"
 
 MODEL_NAME = "google/vivit-b-16x2-kinetics400"
 CLIP_LEN = 32     
@@ -106,8 +106,8 @@ pulados = 0
 
 for _, row in tqdm(df.iterrows(), total=len(df)):
     base_name = f"{row['film_id']}_{int(row['clip_id'])}"
-    video_path = os.path.join(VIDEO_DIR, base_name + ".mp4")
-    output_path = os.path.join(VIDEO_DIR, base_name + ".pt")
+    video_path = os.path.join("video3.mp4")
+    output_path = os.path.join("video3.pt")
 
     if os.path.exists(output_path):
         pulados += 1
