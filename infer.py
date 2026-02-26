@@ -82,7 +82,7 @@ def main():
             res = model.generate_continuation(bip, 32000, item['prompt'], item['video'].to("cuda"), progress=True)
         wavfile.write(f"{batch_idx}.wav", 32000, res.cpu().numpy())'''
 
-    prompt = "An instrumental track featuring a fast-tempo drum kit rhythm and distorted bass guitar lines. The arrangement includes a loud metallic percussion strike and a cymbal crash, followed immediately by a sudden silence"
+    prompt = ""
 
     bip = get_bip_bip(0.125).expand(1, -1, -1)
 
@@ -94,7 +94,7 @@ def main():
         progress=True
         )
 
-    wavfile.write("acidente2.wav", 32000, res.cpu().numpy())
+    wavfile.write("caminhonete-sem-prompt.wav", 32000, res.cpu().numpy())
 
 
 if __name__ == "__main__":
